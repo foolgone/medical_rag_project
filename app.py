@@ -1,16 +1,32 @@
+import os
 from core.database import get_vector_store
+from core.parser import process_medical_pdf
+from core.chain import get_medical_rag_chain
 
-try:
+
+def main():
+    # 1. 获取向量库连接
     vector_db = get_vector_store()
-    print("✅ 数据库连接配置成功！")
 
-    # 模拟一条简单的医疗测试数据
-    test_text = ["感冒通常表现为流鼻涕和咳嗽。"]
-    # vector_db.add_texts(test_text) # 这一步会真正调用 Embedding 并存入数据库
-    # print("✅ 数据存入测试成功！")
+    # 2. 如果数据库是空的，则解析并导入文档
+    # (企业级做法会先检查数据库记录，这里我们先手动触发一次)
+    pdf_path = "data/knowledge.pdf"
+    if os.path.exists(pdf_path):
+        print("正在将医疗知识导入数据库...")
+        chunks = process_medical_pdf(pdf_path)
+        vector_db.add_documents(chunks)
+        print("✅ 知识库更新完成！")
 
-except Exception as e:
-    print(f"❌ 出错了: {e}")
-    print("\n💡 排错提示：")
-    print("1. 检查虚拟机防火墙是否放行了 5432 端口")
-    print("2. 检查 Ollama 服务是否在虚拟机中正常运行且允许远程访问")
+    # 3. 初始化 RAG 问答链
+    rag_chain = get_medical_rag_chain(vector_db)
+
+    # 4. 提问测试
+    query = "根据文档，感冒药都是有哪些成分组成？"
+    print(f"\n用户提问: {query}")
+
+    response = rag_chain.invoke(query)
+    print(f"\n🤖 助手：{response}")
+
+
+if __name__ == "__main__":
+    main()
