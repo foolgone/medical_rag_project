@@ -1,6 +1,6 @@
 from langchain_community.document_loaders import PyMuPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-
+import hashlib
 
 def process_medical_pdf(file_path):
     """
@@ -23,3 +23,11 @@ def process_medical_pdf(file_path):
     print(f"📄 文档解析完成：{file_path}")
     print(f"✂️ 已切分为 {len(split_docs)} 个知识块")
     return split_docs
+
+def get_file_hash(file_path):
+    """计算文件的 MD5 值"""
+    hash_md5 = hashlib.md5()
+    with open(file_path, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_md5.update(chunk)
+    return hash_md5.hexdigest()
